@@ -1,0 +1,40 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find ZIP
+        run: |
+          ZIP=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+          echo "ZIP=$ZIP" >> $GITHUB_ENV
+
+      - name: Extract project
+        run: |
+          mkdir project
+          unzip -q "$ZIP" -d project
+
+      - name: Find Gradle
+        run: |
+          GRADLEW=$(find project -name gradlew -type f | head -n 1)
+          echo "GRADLEW=$GRADLEW" >> $GITHUB_ENV
+          echo "Gradle found: $GRADLEW"
+
+      - name: Build APK
+        run: |
+          chmod +x "$GRADLEW"
+          cd "$(dirname "$GRADLEW")"
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Muzammil-Online-Service-APK
+          path: project/**/build/outputs/apk/**/*.apk
