@@ -1,6 +1,9 @@
 name: Build Android APK
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -11,27 +14,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
       - name: Find ZIP
         run: |
           ZIP=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
-          echo "ZIP=$ZIP" >> $GITHUB_ENV
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
 
       - name: Extract project
         run: |
           mkdir project
           unzip -q "$ZIP" -d project
 
-      - name: Find Gradle
-        run: |
-          GRADLEW=$(find project -name gradlew -type f | head -n 1)
-          echo "GRADLEW=$GRADLEW" >> $GITHUB_ENV
-          echo "Gradle found: $GRADLEW"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
 
       - name: Build APK
         run: |
-          chmod +x "$GRADLEW"
-          cd "$(dirname "$GRADLEW")"
-          ./gradlew assembleDebug
+          cd project/Muzammil_Online_Service_Android
+          gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
